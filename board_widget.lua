@@ -102,8 +102,10 @@ function HangmanBoardWidget:_drawGallows(bb, x, y, w, h, wrong, max_w)
     local leg_len  = math.floor(h * 0.15)
 
     if parts >= 1 then -- head
-        bb:paintCircle(body_cx, head_cy, head_r, C_FG, true)
-        bb:paintCircle(body_cx, head_cy, head_r - lw, C_BG, true)
+        -- paintCircle's 5th arg is a ring width, not a "filled" boolean;
+        -- omitting it defaults the width to the radius (i.e. filled).
+        bb:paintCircle(body_cx, head_cy, head_r, C_FG)
+        bb:paintCircle(body_cx, head_cy, head_r - lw, C_BG)
     end
     if parts >= 2 then -- body
         drawLine(bb, body_cx - math.floor(lw/2), body_top, lw, body_len, C_FG)
