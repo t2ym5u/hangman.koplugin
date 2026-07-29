@@ -58,11 +58,14 @@ function HangmanBoardWidget:paintTo(bb, x, y)
     local tx = x + math.floor((w - m.x) / 2)
     RenderText:renderUtf8Text(bb, tx, word_y + m.y_top, self.word_face, display, true, false, C_FG)
 
-    -- Wrong letters label
+    -- Wrong letters label — anchored to the word's *actual* measured
+    -- bottom (not a guessed fraction of h), so it never collides with
+    -- descenders/underscores regardless of font metrics or word length.
+    local word_bottom = word_y + m.y_top + m.y_bottom
     local wrong_letters = board:getWrongLetters()
     if #wrong_letters > 0 then
-        local wrong_str = table.concat(wrong_letters, " ")
-        local wy = word_y + math.floor(h * 0.13)
+        local wrong_str = "(" .. table.concat(wrong_letters, " ") .. ")"
+        local wy = word_bottom + math.max(6, math.floor(h * 0.05))
         local wm = RenderText:sizeUtf8Text(0, w, self.info_face, wrong_str, true, false)
         local wx = x + math.floor((w - wm.x) / 2)
         RenderText:renderUtf8Text(bb, wx, wy + wm.y_top, self.info_face, wrong_str, true, false, C_GRAY)
