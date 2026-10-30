@@ -7,7 +7,7 @@ local function lrequire(name)
     return package.loaded[key]
 end
 
-local ButtonTable     = require("ui/widget/buttontable")
+local Blitbuffer      = require("ffi/blitbuffer")
 local Device          = require("device")
 local FrameContainer  = require("ui/widget/container/framecontainer")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
@@ -21,6 +21,7 @@ local T               = require("ffi/util").template
 
 local ScreenBase         = require("screen_base")
 local MenuHelper         = require("menu_helper")
+local KeyboardWidget     = lrequire("common/keyboard_widget")
 local HangmanBoard       = lrequire("board")
 local HangmanBoardWidget = lrequire("board_widget")
 
@@ -56,13 +57,6 @@ La partie se termine quand vous complétez le mot ou quand le pendu est entière
 
 local HangmanScreen = ScreenBase:extend{}
 
-local ALPHABET = {
-    {"A","B","C","D","E","F","G"},
-    {"H","I","J","K","L","M","N"},
-    {"O","P","Q","R","S","T","U"},
-    {"V","W","X","Y","Z"},
-}
-
 function HangmanScreen:init()
     local state = self.plugin:loadState()
     local lang  = self.plugin:getSetting("lang",       "en")
@@ -74,126 +68,99 @@ function HangmanScreen:init()
     ScreenBase.init(self)
 end
 
+function HangmanScreen:isRoundOver()
+    return self.board.won or self.board.lost
+end
+
 function HangmanScreen:serializeState()
     return self.board:serialize()
 end
 
 function HangmanScreen:buildLayout()
-    local sw           = DeviceScreen:getWidth()
-    local sh = DeviceScreen:getHeight()
     local is_landscape = self:isLandscape()
-
-    local btn_width = is_landscape
-        and math.max(math.floor(sw * 0.38), 120)
-        or  math.floor(sw * 0.9)
-
-    self.status_text:setMaxWidth(btn_width)
 
     -- Top bar
     local title_bar = self:buildTitleBar(_("Hangman"), function()
         return {
             { text = _("New game"),     callback = function() self:onNewGame() end },
-            { text = self:_langLabel(), callback = function() self:openLangMenu() end },
             { text = self:_diffLabel(), callback = function() self:openDiffMenu() end },
+            { text = self:_langLabel(), callback = function() self:openLangMenu() end },
             self:makeRulesButtonConfig(GAME_RULES_EN, GAME_RULES_FR),
         }
     end)
 
-    -- Board widget
-    local bw_size
-    if is_landscape then
-        bw_size = math.min(math.floor(sw * 0.45), math.floor(sh * 0.75))
-    else
-        bw_size = math.floor(sw * 0.85)
+    -- Letter keyboard: the same shared widget as Wordle, Word Ladder and
+    -- Cryptogram, laid out like the player's own keyboard. Guessed letters are
+    -- shaded -- dark for a miss, light for a hit -- so what is left to try
+    -- reads at a glance.
+    local controls_w = self:getControlsWidth()
+    self.status_text:setMaxWidth(controls_w)
+    self.keyboard_widget = KeyboardWidget.build{
+        width      = controls_w,
+        key_height = DeviceScreen:scaleBySize(52),
+        onKey      = function(k) self:onLetterTap(k) end,
+        keyColor   = function(k)
+            if not self.board.guessed[k] then return nil end
+            return self.board.secret:find(k, 1, true)
+                and Blitbuffer.COLOR_GRAY_D or Blitbuffer.COLOR_GRAY_9
+        end,
+    }
+    local controls = VerticalGroup:new{
+        align = "center",
+        self.status_text,
+        VerticalSpan:new{ width = Size.span.vertical_large },
+        self.keyboard_widget,
+    }
+
+    -- No bottom actions while playing (the keyboard is the control); once
+    -- the round is over, "New game" appears under it.
+    self.action_bar = nil
+    if self:isRoundOver() then
+        table.insert(controls, VerticalSpan:new{ width = Size.span.vertical_default })
+        table.insert(controls, self:buildActionBar({}))
     end
-    bw_size = math.max(bw_size, 100)
+
+    -- Board widget: the whole budget's width, a little wider than tall.
+    local frame_pad   = Size.padding.default
+    local frame_extra = 2 * (frame_pad + Size.border.window)
+    local budget_w, budget_h = self:getBoardBudget(title_bar, controls)
+    local bw = math.max(budget_w - frame_extra, 100)
+    local bh = math.max(math.min(budget_h - frame_extra, math.floor(bw * 0.8)), 80)
 
     self.board_widget = HangmanBoardWidget:new{
         board  = self.board,
-        width  = bw_size,
-        height = math.floor(bw_size * 0.7),
+        width  = bw,
+        height = bh,
     }
 
     local board_frame = FrameContainer:new{
-        padding = Size.padding.default,
-        margin  = Size.margin.default,
+        padding = frame_pad,
+        margin  = 0,
         self.board_widget,
     }
 
-    -- Alphabet keyboard
-    local key_w    = math.floor(btn_width / 7)
-    local alpha_rows = {}
-    for _, row in ipairs(ALPHABET) do
-        local btns = {}
-        for _, letter in ipairs(row) do
-            local l = letter
-            btns[#btns + 1] = {
-                id       = "btn_" .. l,
-                text     = l,
-                callback = function() self:onLetterTap(l) end,
-            }
-        end
-        alpha_rows[#alpha_rows + 1] = btns
-    end
-    self.alpha_widget = ButtonTable:new{
-        shrink_unneeded_width = true,
-        width   = btn_width,
-        buttons = alpha_rows,
-    }
-
-    self:_updateAlphaButtons()
-
     if is_landscape then
-        local right = VerticalGroup:new{
-            align = "center",
-            self.status_text,
-            VerticalSpan:new{ width = Size.span.vertical_large },
-            self.alpha_widget,
-        }
         local content = HorizontalGroup:new{
-            align  = "center",
+            align = "center",
             board_frame,
-            HorizontalSpan:new{ width = Size.span.horizontal_default },
-            right,
+            HorizontalSpan:new{ width = self:getGutter() },
+            controls,
         }
         self:buildLandscapeLayout(title_bar, content)
     else
-        local footer = VerticalGroup:new{
-            align = "center",
-            self.alpha_widget,
-            VerticalSpan:new{ width = Size.span.vertical_large },
-            self.status_text,
-        }
-        self:buildPortraitLayout(title_bar, board_frame, footer)
+        self:buildPortraitLayout(title_bar, board_frame,
+            VerticalGroup:new{ align = "center", controls, VerticalSpan:new{ width = self:getGutter() } })
     end
     self:updateStatus()
-end
-
-function HangmanScreen:_updateAlphaButtons()
-    if not self.alpha_widget then return end
-    for _, row in ipairs(ALPHABET) do
-        for _, letter in ipairs(row) do
-            local btn = self.alpha_widget:getButtonById("btn_" .. letter)
-            if btn then
-                local used = self.board.guessed[letter]
-                -- dim used letters by marking them with a different visual cue
-                if used then
-                    btn:setText("·", btn.width)
-                else
-                    btn:setText(letter, btn.width)
-                end
-            end
-        end
-    end
 end
 
 function HangmanScreen:onLetterTap(letter)
     local result = self.board:guess(letter)
     if result == "already" or result == "done" then return end
-    self.board_widget:refresh()
-    self:_updateAlphaButtons()
-    self:updateStatus()
     self.plugin:saveState(self.board:serialize())
+    -- Rebuild so the keyboard picks up the new key shading.
+    self:buildLayout()
+    UIManager:setDirty(self, function() return "ui", self.dimen end)
 end
 
 function HangmanScreen:onNewGame()
@@ -243,28 +210,34 @@ function HangmanScreen:updateStatus(msg)
     local status
     if msg then
         status = msg
-    elseif self.board.won then
-        status = T(_("You won! W:%1 L:%2"), self.board.wins, self.board.losses)
-    elseif self.board.lost then
-        status = T(_("Lost! Word: %1  W:%2 L:%3"),
-            self.board.secret, self.board.wins, self.board.losses)
     else
-        status = T(_("Wrong: %1/%2  W:%3 L:%4"),
-            self.board.wrong, self.board:maxWrong(),
-            self.board.wins, self.board.losses)
+        -- The running score only shows between games: mid-game the line
+        -- has to fit the narrow landscape side panel.
+        local score = self:joinStatus(
+            T(_("Wins: %1"),   self.board.wins),
+            T(_("Losses: %1"), self.board.losses))
+        if self.board.won then
+            status = self:joinStatus(_("You won!"), score)
+        elseif self.board.lost then
+            status = self:joinStatus(T(_("The word was %1."), self.board.secret), score)
+        else
+            status = self:joinStatus(
+                self:_diffLabel(),
+                T(_("Wrong: %1/%2"), self.board.wrong, self.board:maxWrong()))
+        end
     end
     ScreenBase.updateStatus(self, status)
 end
 
 function HangmanScreen:_langLabel()
     local lang = self.plugin:getSetting("lang", "en")
-    return lang == "fr" and "FR" or "EN"
+    return T(_("Language: %1"), lang == "fr" and "FR" or "EN")
 end
 
 function HangmanScreen:_diffLabel()
     local diff = self.plugin:getSetting("difficulty", "medium")
     local labels = { easy = _("Easy"), medium = _("Medium"), hard = _("Hard") }
-    return labels[diff] or diff
+    return T(_("Difficulty: %1"), labels[diff] or diff)
 end
 
 return HangmanScreen

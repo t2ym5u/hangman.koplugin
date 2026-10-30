@@ -1,4 +1,5 @@
 local Blitbuffer     = require("ffi/blitbuffer")
+local Device         = require("device")
 local Font           = require("ui/font")
 local Geom           = require("ui/geometry")
 local InputContainer = require("ui/widget/container/inputcontainer")
@@ -10,6 +11,28 @@ local drawLine = gwb.drawLine
 local C_BG    = Blitbuffer.COLOR_WHITE
 local C_FG    = Blitbuffer.COLOR_BLACK
 local C_GRAY  = Blitbuffer.COLOR_GRAY_9
+
+local Screen = Device.screen
+
+-- Largest face whose ink for `sample` fits max_w x max_h. Measured unbounded
+-- (a max_width limit cuts the text, so the width test could never fail), ink
+-- height is y_top + y_bottom, and Font:getFace scales its size by the DPI, so
+-- the pixel bound is converted back first.
+local function fitFace(name, sample, max_w, max_h)
+    local lo = 6
+    local hi = math.max(lo, math.floor(max_h * 1000 / Screen:scaleBySize(1000)) * 2)
+    local best = lo
+    while lo <= hi do
+        local mid = math.floor((lo + hi) / 2)
+        local m = RenderText:sizeUtf8Text(0, Screen:getWidth(), Font:getFace(name, mid), sample, true, false)
+        if m.x <= max_w and m.y_top + m.y_bottom <= max_h then
+            best, lo = mid, mid + 1
+        else
+            hi = mid - 1
+        end
+    end
+    return Font:getFace(name, best)
+end
 
 -- ---------------------------------------------------------------------------
 -- HangmanBoardWidget — draws the gallows, figure, word, and wrong letters
@@ -24,10 +47,15 @@ local HangmanBoardWidget = InputContainer:extend{
 function HangmanBoardWidget:init()
     self.dimen = Geom:new{ w = self.width, h = self.height }
 
-    local word_size = math.max(10, math.floor(self.width * 0.07))
-    self.word_face   = Font:getFace("cfont",       word_size)
-    local info_size  = math.max(8,  math.floor(self.width * 0.05))
-    self.info_face   = Font:getFace("smallinfofont", info_size)
+    -- Sized against the widest the line can get (every letter a W), so
+    -- revealing letters never pushes the word past the edges. Wrong letters
+    -- are capped at the full alphabet's worth of misses (max_wrong of them).
+    local sample = string.rep("W", #self.board.secret, " ")
+    self.word_face = fitFace("cfont", sample,
+        math.floor(self.width * 0.92), math.floor(self.height * 0.16))
+    local wrong_sample = "(" .. string.rep("W", self.board:maxWrong(), " ") .. ")"
+    self.info_face = fitFace("smallinfofont", wrong_sample,
+        math.floor(self.width * 0.92), math.floor(self.height * 0.08))
     self.paint_rect  = nil
 end
 
@@ -73,7 +101,10 @@ function HangmanBoardWidget:paintTo(bb, x, y)
 end
 
 function HangmanBoardWidget:_drawGallows(bb, x, y, w, h, wrong, max_w)
-    local lw = math.max(2, math.floor(w * 0.025))   -- line width
+    -- Line width follows the gallows height, like every other part of the
+    -- figure: tied to the width it came out twice as thick as the head on
+    -- a wide board, filling the head in and blotting the arms together.
+    local lw = math.max(2, math.floor(h * 0.025))   -- line width
     local px = x + math.floor(w * 0.15)             -- gallows left edge
     local py = y + math.floor(h * 0.05)             -- gallows top
 
