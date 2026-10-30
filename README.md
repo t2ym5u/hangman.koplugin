@@ -22,7 +22,6 @@ the hangman drawing. Reveal the full word before the drawing is complete to win.
 - **Configurable word length** — short (3–5), medium (6–8), long (9+)
 - **Difficulty levels** — Easy (8 wrong guesses allowed), Medium (6), Hard (4)
 - **Category mode** — words from specific categories (animals, countries, food…)
-- **Hint** — reveal one random letter at the cost of one wrong-guess allowance
 - **ASCII art drawing** — progressive hangman illustration rendered in monospace
 - **Statistics** — win/loss ratio and average guesses
 - **Auto-save** — in-progress game restored on next launch
@@ -32,10 +31,9 @@ the hangman drawing. Reveal the full word before the drawing is complete to win.
 | Action | How |
 |--------|-----|
 | Guess a letter | Tap it on the on-screen alphabet |
-| Request a hint | Tap **Hint** |
 | New game | Tap **New game** |
-| Change language | Tap **Lang** |
-| Change difficulty | Tap **Diff** |
+| Change language | Tap **Language** |
+| Change difficulty | Tap **Difficulty** |
 | Show rules | Tap **Rules** |
 
 ## Why e-ink friendly?
