@@ -9,7 +9,9 @@
 -- drawing gets a miss and the turn passes. The team that completes the word
 -- scores (allowed misses - misses + 1) points: 7 with no miss on Medium, down
 -- to 2 with five. A finished drawing reveals the word; nobody scores.
--- A match is `rounds` words.
+-- A match is `rounds` words. List words never come back within a match, and
+-- with opts.plugin they are drawn through the solo game's word history
+-- (board.lua), so a word seen before waits until the list is used up.
 
 local _dir = debug.getinfo(1, "S").source:sub(2):match("(.*[/\\])") or "./"
 local function lrequire(name)
@@ -74,10 +76,20 @@ end
 -- Match
 -- ---------------------------------------------------------------------------
 
+-- The list words this match has used so far, as a set.
+local function usedSet(list)
+    local set = {}
+    for _i, w in ipairs(list) do set[w] = true end
+    return set
+end
+
 -- opts: names (team names), rounds, lang, difficulty, word_source
--- ("list" or "typed").
+-- ("list" or "typed"), plugin (settings holder for the word history; none in
+-- the specs).
 function HangmanParty.new(opts)
     local self = setmetatable({
+        plugin      = opts.plugin,
+        used        = {},
         scores      = Party.newScores(opts.names),
         rounds      = opts.rounds or HangmanParty.DEFAULT_ROUNDS,
         lang        = opts.lang or "en",
@@ -116,8 +128,15 @@ end
 function HangmanParty:startRound()
     Party.nextRound(self.scores)
     local k = (self.scores.round - 1) % self:teamCount() + 1
-    self.board = HangmanBoard:new{ lang = self.lang, difficulty = self.difficulty }
     self.last  = nil
+    if self.word_source == "typed" then
+        -- The setter's word replaces this one: nothing to remember.
+        self.board = HangmanBoard:new{ lang = self.lang, difficulty = self.difficulty }
+    else
+        self.board = HangmanBoard:new{ lang = self.lang, difficulty = self.difficulty,
+                                       plugin = self.plugin, exclude = usedSet(self.used) }
+        self.used[#self.used + 1] = self.board.secret
+    end
     if self.word_source == "typed" then
         self.setter = k
         self.turn   = self:_nextTeam(k)
@@ -234,17 +253,26 @@ function HangmanParty:serialize()
         setter      = self.setter,
         phase       = self.phase,
         last        = self.last,
+        used        = self.used,
         board       = self.board:serialize(),
     }
 end
 
 -- A saved match, or nil when the table is unusable.
-function HangmanParty.load(data)
+function HangmanParty.load(data, plugin)
     if type(data) ~= "table" then return nil end
     local scores = Party.restoreScores(data.scores)
     if not scores or #scores.names < HangmanParty.MIN_TEAMS then return nil end
     local n = #scores.names
+    local used = {}
+    if type(data.used) == "table" then
+        for _i, w in ipairs(data.used) do
+            if type(w) == "string" then used[#used + 1] = w end
+        end
+    end
     local self = setmetatable({
+        plugin      = plugin,
+        used        = used,
         scores      = scores,
         rounds      = tonumber(data.rounds) or HangmanParty.DEFAULT_ROUNDS,
         lang        = data.lang or "en",
@@ -259,8 +287,10 @@ function HangmanParty.load(data)
     if self.turn < 1 or self.turn > n or self.turn == self.setter then
         self.turn = self:_nextTeam(self.setter or n)
     end
-    self.board = HangmanBoard:new{ lang = self.lang, difficulty = self.difficulty }
-    if not self.board:load(data.board) then return nil end
+    self.board = HangmanBoard:new{ lang = self.lang, difficulty = self.difficulty,
+                                   data = data.board }
+    if not self.board.loaded then return nil end
+    self.board.plugin = plugin
     return self
 end
 

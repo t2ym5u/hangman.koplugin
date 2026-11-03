@@ -139,17 +139,17 @@ function HangmanScreen:init()
     -- progress (and its wins/losses) is left as it was.
     self.party = self.plugin.launch_mode == "party"
     if self.party then
-        self.match = HangmanParty.load(self.plugin:loadState("party_state"))
+        self.match = HangmanParty.load(self.plugin:loadState("party_state"), self.plugin)
                      or self:_newMatch()
         self.board = self.match.board
     else
-        local state = self.plugin:loadState()
-        local lang  = self.plugin:getSetting("lang",       "en")
-        local diff  = self.plugin:getSetting("difficulty", "medium")
-        self.board  = HangmanBoard:new{ lang = lang, difficulty = diff }
-        if not self.board:load(state) then
-            -- fresh game already created
-        end
+        -- A saved game is restored; otherwise a fresh word is drawn.
+        self.board  = HangmanBoard:new{
+            lang       = self.plugin:getSetting("lang",       "en"),
+            difficulty = self.plugin:getSetting("difficulty", "medium"),
+            plugin     = self.plugin,
+            data       = self.plugin:loadState(),
+        }
     end
     ScreenBase.init(self)
 end
@@ -207,6 +207,7 @@ function HangmanScreen:_newMatch()
         lang        = self.plugin:getSetting("lang", "en"),
         difficulty  = self.plugin:getSetting("difficulty", "medium"),
         word_source = self.plugin:getSetting("party_word_source", "list"),
+        plugin      = self.plugin,
     }
 end
 
@@ -290,9 +291,10 @@ function HangmanScreen:setMode(mode)
         self.board = HangmanBoard:new{
             lang       = self.plugin:getSetting("lang", "en"),
             difficulty = self.plugin:getSetting("difficulty", "medium"),
+            plugin     = self.plugin,
+            data       = self.plugin:loadState(),
         }
-        self.board:load(self.plugin:loadState())
-        self.board:newGame()
+        if self.board.loaded then self.board:newGame() end
     end
     self:_save()
     self:_redraw()

@@ -18,12 +18,11 @@ the hangman drawing. Reveal the full word before the drawing is complete to win.
 
 ## Features
 
-- **Multiple languages** — word lists for EN, FR, DE, ES
-- **Configurable word length** — short (3–5), medium (6–8), long (9+)
+- **Two languages** — about 8,000 words in English and 9,000 in French, all dictionary words (no first names, places, brands or abbreviations)
+- **No repeats** — the words already played are remembered: a word only comes back once about 3,000 others have been played (solo and multiplayer share this memory; a match never repeats a word)
 - **Difficulty levels** — Easy (8 wrong guesses allowed), Medium (6), Hard (4)
-- **Category mode** — words from specific categories (animals, countries, food…)
-- **ASCII art drawing** — progressive hangman illustration rendered in monospace
-- **Statistics** — win/loss ratio and average guesses
+- **Hangman drawing** — the gallows figure is drawn one part per wrong guess
+- **Score** — wins and losses, shown between games
 - **Auto-save** — in-progress game restored on next launch
 
 ## Multiplayer
@@ -59,7 +58,7 @@ Multiplayer* in the game menu, and lay the reader in the middle of the table.
 ## Why e-ink friendly?
 
 Each guess is a single tap that triggers at most one screen update.
-The ASCII art hangman drawing is a natural fit for monospace e-ink rendering.
+The hangman drawing is plain black lines on white, sharp on e-ink.
 
 ## License
 
