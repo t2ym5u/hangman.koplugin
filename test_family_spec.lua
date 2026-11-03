@@ -2,7 +2,7 @@
 -- secret word (shown once the round ends) must never be one of blocklist.lua's
 -- vulgar, sexual, scatological, slur or drug-related words.
 local DIR = debug.getinfo(1, "S").source:sub(2):match("(.*[/\\])") or "./"
-package.path = DIR .. "?.lua;" .. package.path
+package.path = DIR .. "?.lua;" .. DIR .. "common/?.lua;" .. package.path
 
 local Blocklist = dofile(DIR .. "blocklist.lua")
 

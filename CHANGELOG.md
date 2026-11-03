@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.0] - 2026-11-03
+
+### Changed
+- No more repeated words: the game remembers the words already played, per
+  language, and draws a new one each time; a word only comes back once
+  about 3,000 others have been played. Solo games and multiplayer matches
+  share this memory, and a match never uses the same list word twice
+  (typed words are not affected).
+- English word list cleaned: only words found in the ENABLE Scrabble
+  dictionary are kept, so first names, places, brands and abbreviations
+  (AARON, ALASKA, ACLU, ASAP…) are no longer drawn. 7,946 words are drawn.
+
+### Fixed
+- README listed features the game never had (word length, categories,
+  ASCII drawing, statistics).
+
 ## [1.3.0] - 2026-11-02
 
 ### Added

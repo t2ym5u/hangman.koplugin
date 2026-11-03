@@ -26,6 +26,14 @@ local function getWordList(lang)
     return WORDS.en
 end
 
+-- Words already played, remembered in the plugin settings (game-common
+-- seen_history.lua), one history per language (the difficulty only changes
+-- the number of misses allowed, not the words): a new word is one not seen
+-- yet, and a word only comes back once its whole list has been played --
+-- about 3,000 games here, since the oldest are forgotten past SEEN_MAX.
+local SeenHistory = require("seen_history")
+local SEEN_MAX = 3000
+
 local MAX_WRONG  = { easy = 8, medium = 6, hard = 4 }
 local LANG_ORDER = { "en", "fr" }
 
@@ -36,9 +44,16 @@ local LANG_ORDER = { "en", "fr" }
 local HangmanBoard = {}
 HangmanBoard.__index = HangmanBoard
 
+-- opts.plugin : settings holder for the word history (none: plain random,
+--               as in the specs); opts.data : a saved game to restore instead
+--               of drawing a word (obj.loaded tells whether it worked);
+--               opts.exclude : set of words this board must not draw (a
+--               party match's earlier words).
 function HangmanBoard:new(opts)
     opts = opts or {}
     local obj = setmetatable({
+        plugin      = opts.plugin,
+        exclude     = opts.exclude,
         lang        = opts.lang       or "en",
         difficulty  = opts.difficulty or "medium",
         secret      = "",
@@ -49,7 +64,8 @@ function HangmanBoard:new(opts)
         wins        = 0,
         losses      = 0,
     }, self)
-    obj:newGame()
+    obj.loaded = opts.data ~= nil and obj:load(opts.data) or false
+    if not obj.loaded then obj:newGame() end
     return obj
 end
 
@@ -59,7 +75,18 @@ end
 
 function HangmanBoard:newGame()
     local list = getWordList(self.lang)
-    self.secret  = list[math.random(#list)]
+    if self.exclude then
+        local left = {}
+        for _i, w in ipairs(list) do
+            if not self.exclude[w] then left[#left + 1] = w end
+        end
+        if #left > 0 then list = left end
+    end
+    if self.plugin then
+        self.secret = SeenHistory.open(self.plugin, "words_" .. self.lang, { max = SEEN_MAX }):pick(list)
+    else
+        self.secret = list[math.random(#list)]
+    end
     self.guessed = {}
     self.wrong   = 0
     self.won     = false
