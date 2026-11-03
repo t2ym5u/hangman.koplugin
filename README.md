@@ -26,6 +26,26 @@ the hangman drawing. Reveal the full word before the drawing is complete to win.
 - **Statistics** — win/loss ratio and average guesses
 - **Auto-save** — in-progress game restored on next launch
 
+## Multiplayer
+
+Pick **Hangman · multiplayer** (Tools → Games → Party & quiz), or *Mode:
+Multiplayer* in the game menu, and lay the reader in the middle of the table.
+2 to 4 teams take turns on one word; the team to play is shown in big type.
+
+- **Word**: from the word list (default), or *typed by a player*: each round
+  one team in turn picks the word on a hand-over screen — one of its players
+  types it (hidden as typed) while the others look away — and that team sits
+  the round out. "Word from the list" skips typing for that round.
+- A right letter keeps the turn; a wrong letter adds a miss and **passes the
+  turn**.
+- **Guess the word**: on its turn a team may try the whole word. Wrong costs
+  the team 1 point, adds a miss and passes the turn.
+- The team that completes the word scores **misses left + 1** (Medium: 7 with
+  no miss, 2 with five). If the drawing is finished, the word is revealed and
+  nobody scores.
+- A match is 3, 5, 7 or 10 words (*Rounds*). Team names are remembered; the
+  match is saved when you leave and does not touch your solo game.
+
 ## Controls
 
 | Action | How |

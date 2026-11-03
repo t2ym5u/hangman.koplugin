@@ -14,12 +14,15 @@ local WORDS = {
     fr = nil,  -- loaded lazily
 }
 
+-- Never drawn: the words of the family-friendly blocklist (blocklist.lua).
+local Blocklist = lrequire("blocklist")
+
 local function getWordList(lang)
     if lang == "fr" then
-        if not WORDS.fr then WORDS.fr = lrequire("words_fr") end
+        if not WORDS.fr then WORDS.fr = Blocklist.filter(lrequire("words_fr"), "fr") end
         return WORDS.fr
     end
-    if not WORDS.en then WORDS.en = lrequire("words_en") end
+    if not WORDS.en then WORDS.en = Blocklist.filter(lrequire("words_en"), "en") end
     return WORDS.en
 end
 
