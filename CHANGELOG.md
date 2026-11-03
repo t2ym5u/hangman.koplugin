@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.0] - 2026-11-02
+
+### Added
+- Multiplayer mode for 2 to 4 teams ("Hangman · multiplayer" under Tools →
+  Games → Party & quiz, or Mode: Multiplayer in the game menu): the word comes
+  from the word list, or a player of each team in turn types a secret one
+  (hand-over screen; that team sits the round out). A right letter keeps the
+  turn, a wrong one passes it; a team may try the whole word (wrong: −1
+  point, one miss, turn passes). The team completing the word scores the
+  misses left + 1. Matches of 3/5/7/10 words, team names remembered, final
+  scoreboard, match saved and restored apart from the solo game.
+
+### Changed
+- Family-friendly words: the secret word is never a vulgar, sexual,
+  scatological, slur or drug-related word any more (`blocklist.lua`, applied
+  when the word lists load) -- 69 English and 113 French words.
+
 ## [1.2.1] - 2026-11-02
 
 ### Changed

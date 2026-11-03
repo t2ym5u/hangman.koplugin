@@ -19,6 +19,8 @@ local Hangman = PluginBase:extend{
     name      = "hangman",
     menu_text = _("Hangman"),
     menu_hint = "tools",
+    -- "Hangman · multiplayer": teams take turns on one word.
+    party_mode = true,
 }
 
 function Hangman:createScreen()
