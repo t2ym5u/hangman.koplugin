@@ -125,3 +125,21 @@ describe("HangmanBoard", function()
         end)
     end)
 end)
+
+-- The word list loads with the first game of a language, only that
+-- language's, and release() (the screen closing) drops it.
+describe("HangmanBoard word loading", function()
+    it("loads nothing on require, one language on demand, none after release", function()
+        local Board = dofile(DIR .. "board.lua")
+        assert.are.same({}, Board.loadedLanguages())
+        local list = Board.getWordList("fr")
+        assert.are.same({ "fr" }, Board.loadedLanguages())
+        Board.getWordList("en")
+        assert.are.same({ "en" }, Board.loadedLanguages())
+        Board.release()
+        assert.are.same({}, Board.loadedLanguages())
+        -- Read again, the same list in the same order (seeded draws, history).
+        assert.are.same(list, Board.getWordList("fr"))
+        Board.release()
+    end)
+end)

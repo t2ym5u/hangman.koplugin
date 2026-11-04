@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2026-11-04
+
+### Changed
+- Bigger keys in landscape: the keyboard panel beside the drawing takes
+  half the screen instead of 36 %, so each key is about 40 % wider and the
+  status fits on one line. Portrait is unchanged.
+- Needs game-common 1.13.0.
+- Uses less memory: the game loads when you open it, not when KOReader
+  starts, so it no longer takes memory or startup time while unplayed.
+- Uses less memory: the word lists load when the game opens, only for the
+  language played, and are freed when it closes.
+
+### Added
+- 139 everyday modern English words that the dictionary filter of 1.4.0 had
+  dropped because the Scrabble dictionary predates them: EMAIL, ONLINE,
+  OFFLINE, LOGIN, LOGOUT, WEBSITE, INBOX, PODCAST, SELFIE, EMOJI, HASHTAG,
+  EBOOK, EREADER, plus foods (BAGEL, LATTE, QUINOA, FALAFEL…) and the like.
+  Hand-picked, family-friendly, no brands, names or abbreviations. The
+  English list now has 8,152 words (8,085 drawn after the family filter).
+
 ## [1.4.0] - 2026-11-03
 
 ### Changed
@@ -75,7 +95,6 @@ All notable changes to this project will be documented in this file.
   KOReader's `gettext`, which knows nothing of this plugin's strings, so the
   menu label stayed English while the game's own screen, which goes through
   `i18n`, was translated. `_` now comes from `i18n` here too.
-
 
 ## [1.1.14] - 2026-10-01
 
