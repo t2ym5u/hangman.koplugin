@@ -9,21 +9,23 @@ local function lrequire(name)
     return package.loaded[key]
 end
 
-local WORDS = {
-    en = nil,  -- loaded lazily
-    fr = nil,  -- loaded lazily
-}
+-- A language's word list loads the first time that language is played, not
+-- with the module, and only that language's (switching drops the other one).
+-- HangmanBoard.release() (the screen closing) drops it: it is quick to read
+-- again and only needed while a game is open. Read with loadfile, not
+-- lrequire: package.loaded would keep the raw list for the whole session.
+local WORDS = {}
 
 -- Never drawn: the words of the family-friendly blocklist (blocklist.lua).
 local Blocklist = lrequire("blocklist")
 
 local function getWordList(lang)
-    if lang == "fr" then
-        if not WORDS.fr then WORDS.fr = Blocklist.filter(lrequire("words_fr"), "fr") end
-        return WORDS.fr
+    lang = lang == "fr" and "fr" or "en"
+    if not WORDS[lang] then
+        local raw = assert(loadfile(_dir .. "words_" .. lang .. ".lua"))()
+        WORDS = { [lang] = Blocklist.filter(raw, lang) }
     end
-    if not WORDS.en then WORDS.en = Blocklist.filter(lrequire("words_en"), "en") end
-    return WORDS.en
+    return WORDS[lang]
 end
 
 -- Words already played, remembered in the plugin settings (game-common
@@ -193,5 +195,20 @@ end
 HangmanBoard.LANG_ORDER    = LANG_ORDER
 HangmanBoard.MAX_WRONG     = MAX_WRONG
 HangmanBoard.getWordList   = getWordList
+
+-- Drops the loaded word list (called when the game screen closes); the next
+-- game reads its language's list again.
+function HangmanBoard.release()
+    WORDS = {}
+    Blocklist.release()
+end
+
+-- The languages whose word list is loaded now (for the specs).
+function HangmanBoard.loadedLanguages()
+    local out = {}
+    for lang in pairs(WORDS) do out[#out + 1] = lang end
+    table.sort(out)
+    return out
+end
 
 return HangmanBoard

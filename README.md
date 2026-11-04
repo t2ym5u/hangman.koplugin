@@ -18,7 +18,7 @@ the hangman drawing. Reveal the full word before the drawing is complete to win.
 
 ## Features
 
-- **Two languages** — about 8,000 words in English and 9,000 in French, all dictionary words (no first names, places, brands or abbreviations)
+- **Two languages** — about 8,100 words in English and 8,900 in French, all dictionary words (no first names, places, brands or abbreviations), plus ~140 everyday modern English words like EMAIL, ONLINE or SELFIE
 - **No repeats** — the words already played are remembered: a word only comes back once about 3,000 others have been played (solo and multiplayer share this memory; a match never repeats a word)
 - **Difficulty levels** — Easy (8 wrong guesses allowed), Medium (6), Hard (4)
 - **Hangman drawing** — the gallows figure is drawn one part per wrong guess

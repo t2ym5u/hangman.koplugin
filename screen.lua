@@ -132,7 +132,11 @@ local RULES = {
     party = { PARTY_RULES_EN, PARTY_RULES_FR },
 }
 
-local HangmanScreen = ScreenBase:extend{}
+-- A wider landscape side panel than the fleet default: the keyboard is the
+-- whole control, and its ten keys a row need the width (common/screen_base).
+local HangmanScreen = ScreenBase:extend{
+    landscape_controls_ratio = 0.5,
+}
 
 function HangmanScreen:init()
     -- Party matches are saved under their own key: the solo game in
@@ -675,6 +679,12 @@ function HangmanScreen:_diffLabel()
     local diff = self.plugin:getSetting("difficulty", "medium")
     local labels = { easy = _("Easy"), medium = _("Medium"), hard = _("Hard") }
     return T(_("Difficulty: %1"), labels[diff] or diff)
+end
+
+-- The word lists are only needed while a game is open: drop them when the
+-- screen closes (the next game reads its language's list again).
+function HangmanScreen:onCloseWidget()
+    HangmanBoard.release()
 end
 
 return HangmanScreen

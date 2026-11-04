@@ -98,7 +98,17 @@ describe("word lists", function()
                 set[w] = true
                 assert.is_false(Blocklist.isBlocked(w, lang), w)
             end
-            assert.is_true(#list > 7500, tostring(#list))
+            -- en: 8,152 listed, 8,085 left once the blocklist is applied.
+            assert.is_true(#list > (lang == "en" and 8050 or 7500), tostring(#list))
         end)
     end
+
+    it("en: the hand-added modern words survive the filter", function()
+        local set = {}
+        for _j, w in ipairs(require("board").getWordList("en")) do set[w] = true end
+        for _j, w in ipairs({ "EMAIL", "ONLINE", "OFFLINE", "LOGIN", "LOGOUT",
+                              "LAPTOPS", "WEBSITE", "INBOX", "PODCAST", "SELFIE" }) do
+            assert.is_true(set[w], w)
+        end
+    end)
 end)
