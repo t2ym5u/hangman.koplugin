@@ -149,7 +149,7 @@ function HangmanScreen:init()
     else
         -- A saved game is restored; otherwise a fresh word is drawn.
         self.board  = HangmanBoard:new{
-            lang       = self.plugin:getSetting("lang",       "en"),
+            lang       = self.plugin:getLang({ "fr", "en" }),
             difficulty = self.plugin:getSetting("difficulty", "medium"),
             plugin     = self.plugin,
             data       = self.plugin:loadState(),
@@ -208,7 +208,7 @@ function HangmanScreen:_newMatch()
     return HangmanParty.new{
         names       = Party.loadPlayers(self.plugin, self:_teamCount(), TEAMS),
         rounds      = self.plugin:getSetting("party_rounds", HangmanParty.DEFAULT_ROUNDS),
-        lang        = self.plugin:getSetting("lang", "en"),
+        lang        = self.plugin:getLang({ "fr", "en" }),
         difficulty  = self.plugin:getSetting("difficulty", "medium"),
         word_source = self.plugin:getSetting("party_word_source", "list"),
         plugin      = self.plugin,
@@ -293,7 +293,7 @@ function HangmanScreen:setMode(mode)
     else
         self.match = nil
         self.board = HangmanBoard:new{
-            lang       = self.plugin:getSetting("lang", "en"),
+            lang       = self.plugin:getLang({ "fr", "en" }),
             difficulty = self.plugin:getSetting("difficulty", "medium"),
             plugin     = self.plugin,
             data       = self.plugin:loadState(),
@@ -612,11 +612,11 @@ function HangmanScreen:openLangMenu()
     MenuHelper.openPickerMenu{
         title      = _("Language"),
         items      = items,
-        current_id = self.plugin:getSetting("lang", "en"),
+        current_id = self.plugin:getLang({ "fr", "en" }),
         parent     = self,
         on_select  = function(lang)
             self.board.lang = lang
-            self.plugin:saveSetting("lang", lang)
+            self.plugin:setLang(lang)
             if self.lang_btn then
                 self.lang_btn:setText(self:_langLabel(), self.lang_btn.width)
             end
@@ -671,7 +671,7 @@ function HangmanScreen:updateStatus(msg)
 end
 
 function HangmanScreen:_langLabel()
-    local lang = self.plugin:getSetting("lang", "en")
+    local lang = self.plugin:getLang({ "fr", "en" })
     return T(_("Language: %1"), lang == "fr" and "FR" or "EN")
 end
 
