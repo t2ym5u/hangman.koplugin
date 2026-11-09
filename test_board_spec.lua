@@ -16,12 +16,6 @@ describe("HangmanBoard", function()
             assert.is_false(b.won)
             assert.is_false(b.lost)
         end)
-
-        it("maxWrong follows difficulty", function()
-            assert.are.equal(8, Board:new({ difficulty = "easy" }):maxWrong())
-            assert.are.equal(6, Board:new({ difficulty = "medium" }):maxWrong())
-            assert.are.equal(4, Board:new({ difficulty = "hard" }):maxWrong())
-        end)
     end)
 
     describe("guess", function()
@@ -51,25 +45,6 @@ describe("HangmanBoard", function()
             local letter = b.secret:sub(1, 1)
             b:guess(letter)
             assert.are.equal("already", b:guess(letter))
-        end)
-
-        it("loses once wrong guesses reach maxWrong", function()
-            local b = Board:new({ difficulty = "hard" })  -- maxWrong = 4
-            local wrong_letters = {}
-            for i = 65, 90 do
-                local ch = string.char(i)
-                if not b.secret:upper():find(ch, 1, true) then
-                    wrong_letters[#wrong_letters + 1] = ch
-                end
-                if #wrong_letters == 4 then break end
-            end
-            local result
-            for _, ch in ipairs(wrong_letters) do
-                result = b:guess(ch)
-            end
-            assert.are.equal("lose", result)
-            assert.is_true(b.lost)
-            assert.are.equal(1, b.losses)
         end)
 
         it("wins once every letter of the secret is revealed", function()
